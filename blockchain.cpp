@@ -14,22 +14,22 @@ const BigInteger Blockchain::DIFFICULTY_PRECISION = BigInteger(1000000);
 
 
 Block::Block(string _prevBlockHash, unsigned long long _nonce, unsigned long long _ts, string _text) {
-	prevBlockHash = _prevBlockHash;
-	nonce = _nonce;
-	ts = _ts;
-	text = _text;
+    prevBlockHash = _prevBlockHash;
+    nonce = _nonce;
+    ts = _ts;
+    text = _text;
 }
 
 string Block::blockContentsString() {
-	return prevBlockHash + ":" + std::to_string(nonce) + ":" + std::to_string(ts) + ":" + text;
+    return prevBlockHash + ":" + std::to_string(nonce) + ":" + std::to_string(ts) + ":" + text;
 }
 
 string Block::blockString() {
-	return blockHash + ":" + blockContentsString();
+    return blockHash + ":" + blockContentsString();
 }
 
 Blockchain::Blockchain() {
-	INITIAL_DIFFICULTY = BigInteger::pow(BigInteger(2), BigInteger(256)) / BigInteger(100000);
+    INITIAL_DIFFICULTY = BigInteger::pow(BigInteger(2), BigInteger(256)) / BigInteger(100000);
     currentDifficulty = INITIAL_DIFFICULTY;
     retargetBlockInterval = Blockchain::RETARGET_BLOCK_INTERVAL;
     topBlockNumber = BigInteger(0);
@@ -37,35 +37,35 @@ Blockchain::Blockchain() {
 }
 
 AddBlockResult& Blockchain::addBlock(Block& block, bool mined) {
-	AddBlockResult* result = new AddBlockResult();
+    AddBlockResult* result = new AddBlockResult();
     if (map.count(block.blockHash)) {
-    	result->alreadyExists = true;
-    	return *result;
+        result->alreadyExists = true;
+        return *result;
     }
     if (block.prevBlockHash != ROOT_HASH && !map.count(block.prevBlockHash)) {
         cout << "Orphan - " << block.prevBlockHash << " does not exist" << endl;
-    	result->isOrphan = true;
-    	return *result;
+        result->isOrphan = true;
+        return *result;
     }
     if (!mined) {
         string blockContentsStr = block.blockContentsString();
         string blockHash = sha256(blockContentsStr);
         if (block.blockHash != blockHash) {
-        	cout << "Invalid block hash " << block.blockString() << endl;
-        	result->valid = false;
-        	return *result;
+            cout << "Invalid block hash " << block.blockString() << endl;
+            result->valid = false;
+            return *result;
         }
         BigInteger hashBigInt = BigInteger(block.blockHash, BigInt::HEX_DIGIT);;
         BigInteger targetDifficulty = calculateDifficulty(block.prevBlockHash);
         if (hashBigInt > targetDifficulty) {
-        	cout << "Invalid difficulty" << endl;
-        	result->valid = false;
-        	return *result;
+            cout << "Invalid difficulty" << endl;
+            result->valid = false;
+            return *result;
         }
     }
     map[block.blockHash] = &block;
     if (!descendantsMap.count(block.prevBlockHash)) {
-    	descendantsMap[block.prevBlockHash] = new std::vector<Block*>();
+        descendantsMap[block.prevBlockHash] = new std::vector<Block*>();
     }
     std::vector<Block*>* descendants = descendantsMap.find(block.prevBlockHash)->second;
     descendants->push_back(&block);
@@ -75,8 +75,8 @@ AddBlockResult& Blockchain::addBlock(Block& block, bool mined) {
         cout << topBlockNumber.toStrDec() << (mined ? " > " : " < ") << block.blockString() << endl;
         topBlockHash = block.blockHash;
         setDifficulty(block);
-    	result->valid = true;
-    	return *result;
+        result->valid = true;
+        return *result;
     } else {
         string ihash = block.prevBlockHash;
         int blockDepth = 0;
@@ -92,8 +92,8 @@ AddBlockResult& Blockchain::addBlock(Block& block, bool mined) {
                 } else {
                     cout << (mined ? " > " : " < ") << block.blockString() << endl;
                 }
-            	result->valid = true;
-            	return *result;
+                result->valid = true;
+                return *result;
             }
             ASSERTION(ihash != ROOT_HASH);
             ihash = map.find(ihash)->second->prevBlockHash;
@@ -132,7 +132,7 @@ void Blockchain::setDifficulty(Block& block) {
 //        BigDecimal diff = new BigDecimal(newD.subtract(oldD).multiply(new BigInteger("100")))
 //            .divide(new BigDecimal(oldD), 2, RoundingMode.HALF_UP);
 //        System.out.println("Difficulty " + diff + "% ... " + oldD.toString() + " > " + newD.toString());
-    	cout << "Difficulty ... " <<  currentDifficulty.toStrDec() << " > " << newDifficulty.toStrDec() << endl;
+        cout << "Difficulty ... " <<  currentDifficulty.toStrDec() << " > " << newDifficulty.toStrDec() << endl;
     }
     currentDifficulty = newDifficulty;
 }
@@ -162,7 +162,7 @@ int Blockchain::findDistance(string fromHash, string toHash, int currentDepth) {
 int Blockchain::calculateHeight(string hash) {
     int height = 0;
     while (hash != ROOT_HASH) {
-    	Block block = *(map.find(hash)->second);
+        Block block = *(map.find(hash)->second);
         height++;
         hash = block.prevBlockHash;
     }
@@ -174,7 +174,7 @@ BigInteger Blockchain::difficulty(long interval, BigInteger prevDifficulty) {
 }
 
 std::vector<Block*>& Blockchain::getDescendants(string blockHash) {
-	std::vector<Block*>* result = new std::vector<Block*>();
+    std::vector<Block*>* result = new std::vector<Block*>();
     getDescendants(blockHash, *result);
     return *result;
 }
@@ -183,11 +183,11 @@ void Blockchain::getDescendants(string blockHash, std::vector<Block*>& result) {
     if (descendantsMap.count(blockHash)) {
         std::vector<Block*>* descendants = descendantsMap.find(blockHash)->second;
         for (std::vector<Block*>::iterator it = descendants->begin(); it != descendants->end(); ++it) {
-			int distance = findDistance((*it)->blockHash, topBlockHash, 0);
-			if (distance != -1) {
-				result.push_back(&(**it));
-				getDescendants((*it)->blockHash, result);
-			}
+            int distance = findDistance((*it)->blockHash, topBlockHash, 0);
+            if (distance != -1) {
+                result.push_back(&(**it));
+                getDescendants((*it)->blockHash, result);
+            }
         }
     }
 }
